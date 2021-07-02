@@ -1,0 +1,14 @@
+light_blue = '#ceddf8'
+dark_blue = '#0b234c'
+light_red = '#ba4040'
+red = '#c70000'
+light_green = '#5ed481'
+green = '#18b300'
+background_color = '#e2e2e9'
+cmap_min_color = '#F30400'
+cmap_max_color = '#11AE2B'
+light_orange = '#feb372'
+orange = '#ff680a'
+button_text_color = '#ffe1e4'
+label_font = ('sans-serif', 10)
+radiobutton_font = ('Andale Mono, monospace', 9)
