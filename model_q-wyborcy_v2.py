@@ -11,22 +11,43 @@ from matplotlib.figure import Figure
 import matplotlib.animation as animation
 
 def init(percentage, L):
+    """Initialize net.
+
+    Args:
+        percentage (float): the ratio of the number of people with a positive opinion to everyone,
+        L (int): net size.
+    Returns:
+        [numpy array]: net with a structured opinion.
+    """
     N = L**2
     p = percentage*N
     voters = np.random.permutation([1]*round(p) + [-1]*(N - round(p)))
     return voters.reshape((L, L))
 
-def qVoter_model(initialization, opinion, L, q, p, replace, independence=False, anticonformity=False, f=None):
+def qVoter_model(initialization, opinion, L, q, p, replace, independence=False, anticonformity=False, f=0):
+    """Generate q-voter model for one Monte Carlo step.
+
+    Args:
+        initialization (numpy array): init net,
+        opinion (array): list of average opinions for MC steps,
+        L (int): net size,
+        q (int): influence group size,
+        p (float): probability of nonconformity,
+        replace (bool): draw neighbors with repeating (when True) and without repeating (when False),
+        independence (bool, optional): if independence is chosen. Defaults to False.
+        anticonformity (bool, optional): if anticonformity is chosen. Defaults to False.
+        f (float, optional): probability of change opinion when independence.
+
+    Returns:
+        [list of arrays]: voters net, avaerage opinion array.
+    """
     N = L**2
     voters = initialization
      
     plus_opinion = np.count_nonzero(voters == 1) #liczymy wyborców z opinią 1
     opinion_value = (plus_opinion + (-1)*(N-plus_opinion))/N
     opinion.append(opinion_value) #średnia opinia w czasie
-    """
-    if plus_opinion == N or plus_opinion == 0:
-        print("Konsensus time: {}.".format(time))
-    """
+    
     for __ in range(N):
         #losujemy wyborcę
         x, y = random.randint(-1, L-2), random.randint(-1, L-2)
@@ -54,10 +75,12 @@ def qVoter_model(initialization, opinion, L, q, p, replace, independence=False, 
             elif anticonformity == True:
                 if abs(sum([voters[group_of_influence[i][0], group_of_influence[i][1]] for i in range(q)])) == q:
                     voters[x, y] = (-1)*voters[group_of_influence[0][0], group_of_influence[0][1]]
-    return voters, opinion, plus_opinion #zwracamy siatkę po jednym kroku, średnią opinię po czasie, opinie, żeby sprawdzić konsensu
+    return voters, opinion #zwracamy siatkę po jednym kroku, średnią opinię po czasie
 
 
 class Application(tk.Frame):
+    """Create q-voter model application."""
+
     def __init__(self, master=None):
         super().__init__(master)
         self.master = master
@@ -79,6 +102,7 @@ class Application(tk.Frame):
         self.ax1.axis("off")
 
     def created_labels_and_entry_fields(self):
+        """Create application window elements."""
         self.size = tk.Label(self.master, text="Rozmiar układu", background=background_color, font=label_font, justify='center')
         self.size.pack(side=TOP)
         self.size.place(x=25, y=5)
@@ -153,6 +177,8 @@ class Application(tk.Frame):
         self.frame.place(x=360, y=0)
 
     def animate(self, fig):
+        """Generate animation."""
+
         for widget in self.frame.winfo_children():
             widget.destroy()
         self.independence = not(self.anticonformity.get())
@@ -161,6 +187,8 @@ class Application(tk.Frame):
         return anim
 
     def animation_display(self):
+        """Display animation."""
+
         fig = Figure(facecolor=background_color)
         self.anim = self.animate(fig)
         
@@ -169,23 +197,32 @@ class Application(tk.Frame):
         self.anim.simulation_show()
 
     def pause(self):
+        """Pause animation."""
+
         self.anim.anim.event_source.stop()
 
     def continue_anim(self):
+        """Start animation after pause."""
+
         self.anim.anim.event_source.start()
 
     def created_draw_btn(self):
+        """Create button to start animation."""
+
         self.draw_btn = tk.Button(self.master, text="START", font=('Roboto', 12, 'bold'), foreground=button_text_color, relief="ridge", activebackground=light_green, background=green, 
         command=self.animation_display)
         self.draw_btn.pack()
         self.draw_btn.place(x=25, y=450)
 
     def created_stop_btn(self):
+        """"Create button to stop animation."""
+
         self.stop_btn = tk.Button(self.master, text="STOP", font=('Roboto', 12, 'bold'), foreground=button_text_color, activebackground=light_red, background=red, relief="ridge",  command=self.pause)
         self.stop_btn.pack()
         self.stop_btn.place(x=115, y=450)
 
     def created_continue_btn(self):
+        """Create button to continue animation."""
         self.continue_btn = tk.Button(self.master, text="WZNÓW", font=('Roboto', 12, 'bold'), foreground=button_text_color, relief="ridge", activebackground=light_orange, background=orange, command=self.continue_anim)
         self.continue_btn.pack()
         self.continue_btn.place(x=180, y=450)
@@ -196,6 +233,7 @@ class Application(tk.Frame):
         self.quit_btn.place(x=25, y=500)
     
 class AnimationModel:
+    """Create q-voter model animation."""
     def __init__(self, fig, p, percentege, replace, L, f, q, independence, anticonformity):
         self.fig = fig
         self.p = p
@@ -213,6 +251,7 @@ class AnimationModel:
         self.initial_plot_set_up()
 
     def initial_plot_set_up(self):
+        """Set initial plot parameters."""
         self.fig.set_figheight(6)
         self.fig.set_figwidth(6)
         self.ax1 = self.fig.add_subplot(211)
@@ -223,6 +262,7 @@ class AnimationModel:
         self.ax2.set_ylabel("średnia opinia")
 
     def animate_func(self, j):
+        """Create animation."""
         #sprawdzamy czy to początek symulacji
         if self.time == 0:
             #inicjalizacja warunków początkowych
@@ -235,7 +275,7 @@ class AnimationModel:
             self.heat_map = self.ax1.imshow(self.initialization, vmin=-1, vmax=1, cmap=self.cmap)
             self.opinion_plot, = self.ax2.plot(self.time_range, self.opinion, color="purple")
         else:
-            self.initialization, self.opinion, self.konsensus = qVoter_model(self.initialization, self.opinion, self.L, self.q, self.p, self.replace, independence=self.independence,  anticonformity=self.anticonformity, f=self.f)
+            self.initialization, self.opinion = qVoter_model(self.initialization, self.opinion, self.L, self.q, self.p, self.replace, independence=self.independence,  anticonformity=self.anticonformity, f=self.f)
         #ustawienia heatmapy
         self.ax1.set_title("{time} [MCS]".format(time=self.time))
         self.heat_map.set_array(np.copy(self.initialization)) #aktualizacja heatmapy
@@ -250,7 +290,7 @@ class AnimationModel:
         return [self.heat_map], self.opinion_plot,
 
     def simulation_show(self):
-        """Funkcja wyświetlająca animację"""
+        """Show animation"""
         
         self.anim = animation.FuncAnimation(
                                     self.fig, 
@@ -259,10 +299,8 @@ class AnimationModel:
                                     repeat = False,
                                     )
         plt.show()
-        #self.ax1.show()
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = Application(master=root)
     app.mainloop()
-    #anim = AnimationModel(plt.figure(figsize=(3.5, 3.5), facecolor=background_color), 0.5, 0.5, False, 10, 0.5, 2, True, False)
-    #anim.simulation_show()
