@@ -295,7 +295,7 @@ class AnimationModel:
         self.anim = animation.FuncAnimation(
                                     self.fig, 
                                     self.animate_func, 
-                                    interval = 5, # in ms
+                                    interval = 5,
                                     repeat = False,
                                     )
         plt.show()
